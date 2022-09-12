@@ -11,10 +11,6 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
     start_urls = ['https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1070%2C1071%2C1073%2C1072%2C1074',
                   'https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1070%2C1071%2C1073%2C1072%2C1074&pagenum=2']
 
-    custom_settings = {
-        'ROBOTSTXT_OBEY': False,
-        'CONCURRENT_ITEMS': 150,
-    }
 
     request_header = {
         'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -31,15 +27,14 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         for url in self.start_urls:
             yield scrapy.Request(
                 url,
-                callback=self.parseLink,
+                callback=self.parse_link,
                 method="POST",
                 body=self.body,
                 headers=self.request_header
             )
 
     def clear_date(self, string):
-        string = string.strip('\n\t')
-        string = string.split(';')
+        string = string.strip('\n\t').split(';')
         return string
 
 
@@ -56,25 +51,29 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
             return str(list(map(lambda x: self.convert_date(x), self.clear_date(date_str))))
 
 
-    def parseLink(self, response):
+    def parse_link(self, response):
         jsn = json.loads(response.text)
         resp = HtmlResponse(url=response.request.url, body=jsn['data']['html'], encoding='utf-8')
+        current_page = jsn['data']['filters_data']['props']['rewards-grid']['page']
+        max_page = jsn['data']['filters_data']['props']['rewards-grid']['max_num_pages']
+        print(current_page)
+        print(max_page)
         links = resp.xpath("//a/@href").getall()
         catalogs =  resp.xpath("//div[@data-id='30c11ef']/div/h2/text()").getall()
         self.cat_dictionary.update ( dict(zip( links,catalogs)))
-        yield from response.follow_all(links, self.parsePage)
+        yield from response.follow_all(links, self.parse_page)
 
 
-    def parsePage(self, response):
-        page = response.xpath("//body")
+    def parse_page(self, response):
+        #page = response.xpath("//body")
         page_url = response.request.url
-        page_title = page.xpath("//div[@data-id='f2eae65']/div/h2/text()").get()
-        page_about = page.xpath("//div[@data-id='52b1d20']/div/p").get()
-        page_reward_amount = page.xpath("//div[@data-id='5e60756']/div/h2/text()").get()
-        page_associated_organization = page.xpath("//div[@data-id='095ca34']/div/p/a/text()").get()
-        page_associated_location = page.xpath("//div[@data-id='0fa6be9']/div/div/span/text()").get()
-        page_images = page.xpath("//div[@id='gallery-1']/figure/div/picture/img/@src").get()
-        page_date_of_birthday = self.date_convert(page.xpath("//div[@data-id='9a896ea']/div/text()").get())
+        page_title = response.xpath("//div[@data-id='f2eae65']/div/h2/text()").get()
+        page_about = response.xpath("//div[@data-id='52b1d20']/div/p").get()
+        page_reward_amount = response.xpath("//div[@data-id='5e60756']/div/h2/text()").get()
+        page_associated_organization = response.xpath("//div[@data-id='095ca34']/div/p/a/text()").get()
+        page_associated_location = response.xpath("//div[@data-id='0fa6be9']/div/div/span/text()").get()
+        page_images = response.xpath("//div[@id='gallery-1']/figure/div/picture/img/@src").get()
+        page_date_of_birthday = self.date_convert(response.xpath("//div[@data-id='9a896ea']/div/text()").get())
         page_category = self.cat_dictionary[page_url]
 
         yield {
