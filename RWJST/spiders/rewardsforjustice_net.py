@@ -8,8 +8,8 @@ from datetime import datetime
 class RewardsforjusticeNetSpider(scrapy.Spider):
     name = 'RWJST'
     allowed_domains = ['rewardsforjustice.net']
-    start_urls = ['https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1070%2C1071%2C1073%2C1072%2C1074',
-                  'https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1070%2C1071%2C1073%2C1072%2C1074&pagenum=2']
+    start_urls = ['https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1074',]
+    #'https://rewardsforjustice.net/index/?jsf=jet-engine:rewards-grid&tax=crime-category:1070%2C1071%2C1073%2C1072%2C1074&pagenum=2'
 
 
     request_header = {
@@ -27,7 +27,7 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         for url in self.start_urls:
             yield scrapy.Request(
                 url,
-                callback=self.parse_link,
+                callback=self.page_counter,
                 method="POST",
                 body=self.body,
                 headers=self.request_header
@@ -51,13 +51,25 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
             return str(list(map(lambda x: self.convert_date(x), self.clear_date(date_str))))
 
 
+    def page_counter(self, response):
+        jsn = json.loads(response.text)
+        current_page = jsn['data']['filters_data']['props']['rewards-grid']['page']
+        max_page = jsn['data']['filters_data']['props']['rewards-grid']['max_num_pages']
+        found_posts = jsn['data']['filters_data']['props']['rewards-grid']['found_posts']
+        print("current_page :" + str(current_page) + "  "+ "max_page: "+ str(max_page)  + "  " + "found_posts: " + str(found_posts))
+        for count in range(1, max_page+1):
+            yield scrapy.Request(
+                self.start_urls[0]+"&pagenum="+str(count),
+                callback=self.parse_link,
+                method="POST",
+                body=self.body,
+                headers=self.request_header
+            )
+
+
     def parse_link(self, response):
         jsn = json.loads(response.text)
         resp = HtmlResponse(url=response.request.url, body=jsn['data']['html'], encoding='utf-8')
-        current_page = jsn['data']['filters_data']['props']['rewards-grid']['page']
-        max_page = jsn['data']['filters_data']['props']['rewards-grid']['max_num_pages']
-        print(current_page)
-        print(max_page)
         links = resp.xpath("//a/@href").getall()
         catalogs =  resp.xpath("//div[@data-id='30c11ef']/div/h2/text()").getall()
         self.cat_dictionary.update ( dict(zip( links,catalogs)))
