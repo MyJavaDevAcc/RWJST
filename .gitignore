@@ -3,3 +3,6 @@
 
 # ignore all xlsx
 *.xlsx
+
+# ignore resp_1.txt
+resp_1.txt
