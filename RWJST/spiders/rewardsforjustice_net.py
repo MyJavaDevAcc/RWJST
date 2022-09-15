@@ -2,7 +2,7 @@ import scrapy
 import json
 import requests
 from scrapy.http import HtmlResponse
-from datetime import datetime
+import datetime
 
 
 class RewardsforjusticeNetSpider(scrapy.Spider):
@@ -40,9 +40,9 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
 
     def convert_date(self, string):
         try:
-            string = str(datetime.date(datetime.strptime(string.lstrip(), "%B %d, %Y")))
+            string = str(datetime.datetime.date(datetime.datetime.strptime(string.lstrip(),"%B %d, %Y")))
         except:
-            return string
+            return string + "-01-01"
         return string
 
 
@@ -75,27 +75,41 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         self.cat_dictionary.update ( dict(zip( links,catalogs)))
         yield from response.follow_all(links, self.parse_page)
 
+    class Page(scrapy.Item):
+        page_url = scrapy.Field()
+        page_category = scrapy.Field()
+        page_title = scrapy.Field()
+        page_about = scrapy.Field()
+        page_reward_amount = scrapy.Field()
+        page_associated_organization = scrapy.Field()
+        page_associated_location = scrapy.Field()
+        page_images = scrapy.Field()
+        page_date_of_birthday = scrapy.Field()
+
 
     def parse_page(self, response):
         #page = response.xpath("//body")
+        page = self.Page()
         page_url = response.request.url
-        page_title = response.xpath("//div[@data-id='f2eae65']/div/h2/text()").get()
-        page_about = response.xpath("//div[@data-id='52b1d20']/div/p").get()
-        page_reward_amount = response.xpath("//div[@data-id='5e60756']/div/h2/text()").get()
-        page_associated_organization = response.xpath("//div[@data-id='095ca34']/div/p/a/text()").get()
-        page_associated_location = response.xpath("//div[@data-id='0fa6be9']/div/div/span/text()").get()
-        page_images = response.xpath("//div[@id='gallery-1']/figure/div/picture/img/@src").get()
+        page_title = response.xpath("//*[@id='hero-col']/div/div[1]/div/h2").get()
+        page_about = response.xpath("//*[@id='reward-about']/div/div[2]/div/p").getall()
+        page_reward_amount = response.xpath("//*[@id='reward-box']/div/div[2]/div/h2/text()").get()
+        page_associated_organization = response.xpath("//*[@id='Rewards-Organizations-Links']/div/p/a/text()").get()
+        page_associated_location = response.xpath("///*[@id='reward-fields']/div/div[7]/div/div/span/text()").extract()
+        page_images = response.xpath("//*[@id='gallery-1']/figure[1]/div/picture/img/@src").getall()
         page_date_of_birthday = self.date_convert(response.xpath("//div[@data-id='9a896ea']/div/text()").get())
         page_category = self.cat_dictionary[page_url]
 
-        yield {
-            'PageURL': page_url.strip() if page_url else "null",
-            'Category': page_category.strip() if page_category else "null",
-            'Title': page_title.strip() if page_title else "null",
-            'RewardAmount': page_reward_amount.strip()[6:] if page_reward_amount else "null",
-            'AssociatedOrganization': page_associated_organization.strip() if page_associated_organization else "null",
-            'AssociatedLocation': page_associated_location.strip() if page_associated_location else "null",
-            'About': page_about.strip() if page_about else "null",
-            'Images': page_images.strip() if page_images else "null",
-            'DateOfBirthday': page_date_of_birthday.strip('[]') if page_date_of_birthday else "null",
-        }
+
+
+        page['page_url'] =  page_url.strip() if page_url else None,
+        page['page_title'] = page_title.strip() if page_title else None,
+        page['page_about'] = page_about.strip() if page_about else None,
+        page['page_reward_amount'] =page_reward_amount.strip()[6:] if page_reward_amount else None,
+        page['page_associated_organization'] = page_associated_organization.strip() if page_associated_organization else None,
+        page['page_associated_location'] = page_associated_location.strip() if page_associated_location else None,
+        page['page_images'] = page_images.strip() if page_images else None,
+        page['page_date_of_birthday'] = page_date_of_birthday.strip('[]') if page_date_of_birthday else None,
+        page['page_category'] = page_category.strip() if page_category else None
+
+        yield page

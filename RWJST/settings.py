@@ -93,3 +93,7 @@ CONCURRENT_ITEMS = 150
 FEED_EXPORTERS = {
     'xlsx': 'scrapy_xlsx.XlsxItemExporter',
 }
+
+FEEDS = {
+    'data.json': {'format': 'json'}
+}
