@@ -42,7 +42,7 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         try:
             string = str(datetime.datetime.date(datetime.datetime.strptime(string.lstrip(),"%B %d, %Y")))
         except:
-            return string + "-01-01"
+            return string
         return string
 
 
@@ -95,21 +95,23 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         page_about = response.xpath("//*[@id='reward-about']/div/div[2]/div/p").getall()
         page_reward_amount = response.xpath("//*[@id='reward-box']/div/div[2]/div/h2/text()").get()
         page_associated_organization = response.xpath("//*[@id='Rewards-Organizations-Links']/div/p/a/text()").get()
-        page_associated_location = response.xpath("///*[@id='reward-fields']/div/div[7]/div/div/span/text()").extract()
-        page_images = response.xpath("//*[@id='gallery-1']/figure[1]/div/picture/img/@src").getall()
-        page_date_of_birthday = self.date_convert(response.xpath("//div[@data-id='9a896ea']/div/text()").get())
+        page_associated_location = response.xpath("///*[@id='reward-fields']/div/div[7]/div/div/span/text()").extract() ###
+        #page_images = response.xpath("//*[@id='gallery-1']/figure[1]/div/picture/img/@src").getall()
+        page_images = response.xpath("//*[@id='gallery-1']/figure[1]/@src").getall()
+        print(page_images)
+        page_date_of_birthday = self.date_convert(response.xpath("//h2[contains(text(), 'Date of Birth:')]/../../following-sibling::div/div/text()").get())
         page_category = self.cat_dictionary[page_url]
 
 
 
-        page['page_url'] =  page_url.strip() if page_url else None,
-        page['page_title'] = page_title.strip() if page_title else None,
-        page['page_about'] = page_about.strip() if page_about else None,
-        page['page_reward_amount'] =page_reward_amount.strip()[6:] if page_reward_amount else None,
-        page['page_associated_organization'] = page_associated_organization.strip() if page_associated_organization else None,
-        page['page_associated_location'] = page_associated_location.strip() if page_associated_location else None,
-        page['page_images'] = page_images.strip() if page_images else None,
-        page['page_date_of_birthday'] = page_date_of_birthday.strip('[]') if page_date_of_birthday else None,
-        page['page_category'] = page_category.strip() if page_category else None
+       # page['page_url'] =  page_url.strip() if page_url else None,
+       # page['page_title'] = page_title.strip() if page_title else None,
+       # page['page_about'] = page_about.strip() if page_about else None,
+       # page['page_reward_amount'] =page_reward_amount.strip()[6:] if page_reward_amount else None,
+       # page['page_associated_organization'] = page_associated_organization.strip() if page_associated_organization else None,
+       # page['page_associated_location'] = page_associated_location.strip() if page_associated_location else None,
+       # page['page_images'] = page_images.strip() if page_images else None,
+       # page['page_date_of_birthday'] = page_date_of_birthday.strip('[]') if page_date_of_birthday else None,
+       # page['page_category'] = page_category.strip() if page_category else None
 
-        yield page
+       # yield page
