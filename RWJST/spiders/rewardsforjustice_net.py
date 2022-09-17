@@ -97,7 +97,7 @@ class RewardsforjusticeNetSpider(scrapy.Spider):
         page_associated_organization = response.xpath("//*[@id='Rewards-Organizations-Links']/div/p/a/text()").get()
         page_associated_location = response.xpath("///*[@id='reward-fields']/div/div[7]/div/div/span/text()").extract() ###
         #page_images = response.xpath("//*[@id='gallery-1']/figure[1]/div/picture/img/@src").getall()
-        page_images = response.xpath("//*[@id='gallery-1']/figure[1]/@src").getall()
+        page_images = response.xpath("//*[@id='gallery-1']/figure[1]/div/picture/img/@src").getall()
         print(page_images)
         page_date_of_birthday = self.date_convert(response.xpath("//h2[contains(text(), 'Date of Birth:')]/../../following-sibling::div/div/text()").get())
         page_category = self.cat_dictionary[page_url]
